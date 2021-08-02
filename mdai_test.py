@@ -315,4 +315,3 @@ if(filePath_candidates): #not an empty list
         ###send2trash.send2trash(jsonFilePath.name)
 else:
     print('failure')
-
