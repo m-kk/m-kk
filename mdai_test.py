@@ -25,7 +25,7 @@ def format_df(df, project_ID) -> DataFrame:
     labelName = ''
     annoNote = ''
 
-    if(project_ID == 'gaq3pBlV'):    #COVID
+    if(project_ID == 'gaq3pBlV'): ####### COVID ###########################################
         #set up the output df to match tracker columns
         # columns = {
         #     'Study ID':[],
@@ -159,14 +159,85 @@ def format_df(df, project_ID) -> DataFrame:
                     working_row['VA Comments (MK)'] += annoNote
                 
 
-    elif(project_ID == 'glBE9BVE'): #SI Animal
-        x = 1+2
-    elif(project_ID == 'rLRAXB2k'): #SI Clinical
-        x = 1+2
-    elif(project_ID == 'W7qygRnP'): #"FAST EPIQ X5-1 3D Swine"
-        x = 1+2
-    elif(project_ID == '3VB59Bov'): #FAST Clinical (Healthy Human)
-        x = 1+2
+    elif(project_ID == 'glBE9BVE'): ####### SI Animal ##############################################
+        print('SI Animal')
+    elif(project_ID == 'rLRAXB2k'): ####### SI Clinical ############################################
+        print('SI Clinical')
+    elif(project_ID == 'W7qygRnP'): ####### "FAST EPIQ X5-1 3D Swine" ##############################
+        print('FAST Animal')
+    elif(project_ID == '3VB59Bov'): ####### FAST Clinical (Healthy Human) ##########################
+        #set up the output df to match tracker columns
+        columns = {
+            'Dataset':[],
+            'Exam #':[],
+            'Scan Zone':[],
+            'VA Read (MZ)':[],
+            'VA Comments (MZ)':[],
+            'VA Read (NS)':[],
+            'VA Comments (NS)':[]
+        }
+        working_df = DataFrame(columns)
+        working_row = {
+            'Dataset': '',
+            'Exam #': '',
+            'Scan Zone': '',
+            'VA Read (MZ)': '',
+            'VA Comments (MZ)': '',
+            'VA Read (NS)': '',
+            'VA Comments (NS)': ''
+        }
+        results_annos_set = {'Negative', 'Small', 'Moderate', 'Large', 'Inconclusive', 'Low IQ - Set Aside ', 'Exclude From Annotation'}
+
+        #pull input df data and put it in the output df
+        for row in df.itertuples():
+
+            if(row.StudyInstanceUID != studyID): #this is either a new exam or the very first row
+                if(studyID != ''): #this is a new exam && not the very first row
+                    #write previous exam's data
+                    working_df = working_df.append(working_row, ignore_index=True)
+                    #reset our working row
+                    working_row['Dataset'] = ''
+                    working_row['Exam #'] = ''
+                    working_row['Scan Zone'] = ''
+                    working_row['VA Read (MZ)'] = ''
+                    working_row['VA Comments (MZ)'] = ''
+                    working_row['VA Read (NS)'] = ''
+                    working_row['VA Comments (NS)'] = ''
+                # else: #this is the very first row
+                
+                studyID = row.StudyInstanceUID
+                working_row['Dataset'] = row.dataset
+                working_row['Exam #'] = str(row.number)
+
+            #process the row
+            annoGroup = row.groupId
+            # annoGroupName = row.groupName
+            labelName = row.labelName
+            if(labelName == 'None'): labelName = ""
+            annoNote = str(row.note)
+            if(annoNote == 'None'): annoNote = ""
+
+            #check for zone
+            if(labelName == 'Zone'):
+                working_row['Scan Zone'] = annoNote
+            elif(annoGroup == 'G_BYQ7V0'): #MZ
+                #add to mz columns (annotation label & annotation note)
+                if(labelName in results_annos_set):
+                    if(working_row['VA Read (MZ)'] != ""):
+                        labelName = "\n" + labelName
+                    working_row['VA Read (MZ)'] += labelName
+                    if(working_row['VA Comments (MZ)'] != "" and annoNote != ""):
+                        annoNote = "; " + annoNote
+                    working_row['VA Comments (MZ)'] += annoNote
+            elif(annoGroup == 'G_P0rz10'): #NS
+                #add to ns columns
+                if(labelName in results_annos_set):
+                    if(working_row['VA Read (NS)'] != ""):
+                        labelName = "\n" + labelName
+                    working_row['VA Read (NS)'] += labelName
+                    if(working_row['VA Comments (NS)'] != "" and annoNote != ""):
+                        annoNote = "; " + annoNote
+                    working_row['VA Comments (NS)'] += annoNote
     else:
         print('Unknown project selected')
  
@@ -238,6 +309,7 @@ if(filePath_candidates): #not an empty list
         output_df = format_df(source_df, project_ID)
 
         write_df_to_csv(output_df, outFilename)
+        #write_df_to_csv(source_df, outFilename)
 
         #delete downloaded json file
         ###send2trash.send2trash(jsonFilePath.name)
